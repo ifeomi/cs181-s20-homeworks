@@ -12,26 +12,44 @@ class LogisticRegression:
     def __init__(self, eta, lam):
         self.eta = eta
         self.lam = lam
+        self.steps = 100000
+        self.loss = 0
+        self.epsilon = 0.000001
 
-    # Just to show how to make 'private' methods
-    def __dummyPrivateMethod(self, input):
-        return None
 
-    # TODO: Implement this method!
+    def __gradient(self, x, y, y_hat):
+        return np.dot(x.T, y_hat - y)
+
+    def __oneHottify(self, y, K):
+        return np.eye(K)[y]
+    def __softmax(self,z):
+        return (np.exp(z.T) / np.sum(np.exp(z), axis=1)).T
+
+    def __updateLoss(self, y, x):
+        for i in range(len(y)):
+            self.loss -= (np.dot(y[i], np.log(self.__softmax(np.dot(x[i], self.W))) + self.lam/2 * (self.W)**2))
+        self.loss = self.loss.sum()
+
     def fit(self, X, y):
-        return
+        X = np.stack([np.ones(len(X)), X.T[0], X.T[1]], axis=1)
+        y = self.__oneHottify(y, 3)
+        self.W = np.random.rand(3, 3)
+        # self.__updateLoss(y, X)
 
-    # TODO: Implement this method!
+        for n in range(self.steps):
+            preds = self.__softmax(np.dot(X, self.W))
+
+            self.W -= self.eta*((self.__gradient(X, y, preds)/len(X))+self.lam*self.W)
+
+            # self.__updateLoss(y, X)
+
+            # print(self.loss)
+            self.loss = 0
+
+
     def predict(self, X_pred):
-        # The code in this method should be removed and replaced! We included it
-        # just so that the distribution code is runnable and produces a
-        # (currently meaningless) visualization.
-        preds = []
-        for x in X_pred:
-            z = np.cos(x ** 2).sum()
-            preds.append(1 + np.sign(z) * (np.abs(z) > 0.3))
-        return np.array(preds)
+        X_pred = np.stack([np.ones(len(X_pred)), X_pred.T[0], X_pred.T[1]], axis=1)
+        return np.argmax(self.__softmax(np.dot(X_pred, self.W)), axis=1)
 
-    # TODO: Implement this method!
     def visualize_loss(self, output_file, show_charts=False):
         pass
