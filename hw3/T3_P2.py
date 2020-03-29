@@ -1,6 +1,7 @@
 import numpy as np
 # might need to install 
 import torch
+import time
 
 # parameters
 N = 2000
@@ -60,16 +61,34 @@ def compare_grads(truth, our_impl):
 # Implement the forward pass of the data. Perhaps you can return some variables that 
 # will be useful for calculating the gradients. 
 def forward(X):
-  return X
+  z1 = sigmoid(X@W1.T + b1)
+  y = sigmoid(z1@W2.T + b2)
+  return [z1, y]
+
 
 # Code the gradients you found in part 2.
 # Can pass in additional arguments
-def get_grads(y, yhat, X): 
-  dLdb2 = None
-  dLdW2 = None
-  dLdb1 = None
-  dLdW1 = None
-  
+def get_grads(y, yhat, X, z): 
+  # for loop over data points
+  dLdb2 = dLdW2 = dLdb1 = dLdW1 = 0
+  for i in range(len(X)):
+    dLdb2n = yhat[i] - y[i]
+    dLdb2 += dLdb2n
+
+    dLdW2h = z[i]*dLdb2n
+    dLdW2 += dLdW2h
+
+    dLdb1n = (1-z[i])*W2*dLdW2h
+    dLdb1 += dLdb1n
+
+    dLdb1n = np.resize(dLdb1n, (H, 1))
+    Xn = np.resize(X[i], (M, 1))
+    dLdW1h = dLdb1n@Xn.T
+    dLdW1 += dLdW1h
   # make sure this order is kept for the compare function
   return [dLdW1, dLdb1, dLdW2, dLdb2]
-  
+
+tic = time.perf_counter()
+print(compare_grads(grads_truth, get_grads(y, forward(X)[1], X, forward(X)[0])))
+toc = time.perf_counter()
+print("Vectorized solution took {} seconds".format(toc-tic))
